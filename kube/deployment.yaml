@@ -18,11 +18,6 @@ spec:
       labels:
         openvpn: ${OVPN_CN}
     spec:
-      tolerations:
-      - effect: NoSchedule
-        key: cattle.io/os
-        operator: Equal
-        value: linux
       restartPolicy: Always
       containers:
       - name: openvpn
