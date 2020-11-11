@@ -1,20 +1,29 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: openvpn
+  labels:
+    openvpn: ${OVPN_CN}
 spec:
-  revisionHistoryLimit: 1
-  replicas: 1
+  selector:
+    matchLabels:
+      openvpn: ${OVPN_CN}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
   template:
     metadata:
       labels:
         openvpn: ${OVPN_CN}
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9176"
     spec:
+      tolerations:
+      - effect: NoSchedule
+        key: cattle.io/os
+        operator: Equal
+        value: linux
       restartPolicy: Always
-      terminationGracePeriodSeconds: 60
       containers:
       - name: openvpn
         image: quay.io/plange/openvpn:latest
@@ -40,10 +49,16 @@ spec:
           name: openvpn-portmapping
         - mountPath: /etc/openvpn/status
           name: openvpn-status
+        - mountPath: /tmp/openvpn.tmpl
+          name: openvpn-config
+          subPath: template
         ports:
         - name: openvpn
           containerPort: 1194
+          protocol: TCP
         env:
+        - name: OVPN_TEMPLATE
+          value: /tmp/openvpn.tmpl
         - name: PODIPADDR
           valueFrom:
             fieldRef:
@@ -73,15 +88,10 @@ spec:
             configMapKeyRef:
               name: openvpn-settings
               key: statusfile
-      - name: metrics
-        image: quay.io/plange/openvpn_exporter:latest
-        ports:
-        - name: openvpn
-          containerPort: 9176
-        volumeMounts:
-        - mountPath: /etc/openvpn_exporter/
-          name: openvpn-status
       volumes:
+      - name: openvpn-config
+        configMap:
+          name: openvpn-config
       - name: openvpn-pki
         secret:
           secretName: openvpn-pki
