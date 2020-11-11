@@ -91,6 +91,7 @@ EOSERVICE
 echo "Creating and applying Kubernetes resources"
 kubectl create configmap --namespace=$namespace openvpn-crl --from-file=crl.pem=$PWD/pki/crl.pem
 kubectl apply --namespace=$namespace -f ./kube/configmaps-example.yaml
+kubectl apply --namespace=$namespace -f ./kube/template_config_map.yaml
 kubectl apply --namespace=$namespace -f $kuberes/openvpn-pki.yaml
 kubectl apply --namespace=$namespace -f $kuberes/openvpn-settings.yaml
 kubectl apply --namespace=$namespace -f $kuberes/openvpn-svc.yaml
